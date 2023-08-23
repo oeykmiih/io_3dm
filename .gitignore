@@ -1,6 +1,6 @@
 # Project
 _*/
-!_tests/
+_tests/
 
 # Python
 __pycache__/
