@@ -10,9 +10,9 @@ bl_info = {
     "wiki_url": "",
     "category": "Import-Export",
 }
-
-# __addon__ = "io_import_3dm"
-# __prefix__ = "IO3DM"
+__version__ = "2.1.0a"
+__addon__ = "io_import_3dm"
+__prefix__ = "IO3DM"
 
 import importlib
 import os
