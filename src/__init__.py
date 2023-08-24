@@ -19,8 +19,6 @@ import os
 import site
 import sys
 
-# NOTE: Only needed if using external library
-LIB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "libs"))
 
 LIBRARIES = [
     "rhino3dm",
@@ -52,9 +50,6 @@ else:
 
 import bpy
 
-CLASSES = [
-]
-
 def cleanse_modules():
     """Remove all plugin modules from sys.modules, will load them again, creating an effective hit-reload soluton"""
     # https://devtalk.blender.org/t/plugin-hot-reload-by-cleaning-sys-modules/20040
@@ -69,9 +64,6 @@ def cleanse_modules():
     return None
 
 def register():
-    for cls in CLASSES:
-        bpy.utils.register_class(cls)
-
     for module in MODULES.values():
         module.register()
     return None
@@ -79,9 +71,5 @@ def register():
 def unregister():
     for module in reversed(MODULES.values()):
         module.unregister()
-
-    for cls in reversed(CLASSES):
-        bpy.utils.unregister_class(cls)
-
     cleanse_modules()
     return None
