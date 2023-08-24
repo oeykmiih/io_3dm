@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 import bpy
 
 from . import blcol
+from . import blob
 from . import blop
 from . import blpy
 from .log import (
