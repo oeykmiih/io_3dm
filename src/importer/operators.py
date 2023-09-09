@@ -159,7 +159,7 @@ class IO3DM_OT_Load(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
         col = layout.column(align=True)
         col.enabled = self.options.filter_objects
-        col.operator(utils.blop.UTILS_OT_Nothing.bl_idname, text="Blocks", depress=False)
+        col.operator(utils.UTILS_OT_Placeholder.bl_idname, text="Blocks", depress=False)
         col.row(align=True).prop(self.options, "block_instancing", expand=True)
 
         col = layout.column(align=True)
