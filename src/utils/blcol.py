@@ -4,8 +4,17 @@ import bpy
 from . import blob
 from . import blpy
 
-def obt(name, force=False, parent=None, overwrite=None):
-    blcol = blpy.obt(bpy.data.collections, name, force=force, overwrite=overwrite)
+def obt(name, force=False, parent=None, local=False, overwrite=None):
+    if local:
+        blcol = blpy.obt(
+            bpy.data.collections,
+            name,
+            scope = bpy.context.scene.collection.children_recursive,
+            force = force,
+            overwrite = overwrite,
+        )
+    else:
+        blcol = blpy.obt(bpy.data.collections, name, force=force, overwrite=overwrite)
     if parent is not None and blcol is not None and name not in parent.children:
         parent.children.link(blcol)
     return blcol

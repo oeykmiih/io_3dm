@@ -3,23 +3,9 @@ import bpy
 import bmesh
 import mathutils
 
-def remove(blob, purge_data=True, recusive=True):
-    if recursive:
-        objects = [o for o in blob.children if o.users <= 1]
-        while objects:
-            remove(objects.pop(), data=True, recursive=True)
-    if purge_data and blob.data.users <= 1:
-        match blob.type:
-            case 'MESH':
-                bpy.data.meshes.remove(blob.data)
-            case 'EMPTY':
-                pass
-            case _:
-                pass
-    if blob is not None:
-        bpy.data.objects.remove()
-    return None
+from . import blpy
 
+#CREDIT: https://blender.stackexchange.com/a/159540
 def apply_transform(ob, loc=False, rot=False, sca=False):
     mb = ob.matrix_basis
     I = Matrix()
@@ -47,11 +33,26 @@ def apply_transform(ob, loc=False, rot=False, sca=False):
     ob.matrix_basis = basis[0] @ basis[1] @ basis[2]
     return None
 
+#CREDIT: https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2
+def join(target, source):
+    new = bmesh.new()
+    new.from_mesh(target.data)
+    temp = bpy.data.meshes.new("temp")
+    for blob in source:
+        _bmesh = bmesh.new()
+        _bmesh.from_mesh(blob.data)
+        _bmesh.transform(blob.matrix_world)
+        _bmesh.to_mesh(temp)
+        _bmesh.free()
+        mimic_materials(blob, target, temp)
+        new.from_mesh(temp)
+    bpy.data.meshes.remove(temp)
+    new.to_mesh(target.data)
+    new.free()
+    return None
+
+#CREDIT: https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2
 def mimic_materials(source, target, temp):
-    """
-    author: iceythe from blenderartists.org
-    https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2
-    """
     s_slots = source.material_slots
     t_slots = target.material_slots
 
@@ -75,19 +76,59 @@ def mimic_materials(source, target, temp):
         p.material_index = find(mat.name)
     return None
 
-def join(target, source):
-    new = bmesh.new()
-    new.from_mesh(target.data)
-    temp = bpy.data.meshes.new("temp")
-    for blob in source:
-        _bmesh = bmesh.new()
-        _bmesh.from_mesh(blob.data)
-        _bmesh.transform(blob.matrix_world)
-        _bmesh.to_mesh(temp)
-        _bmesh.free()
-        mimic_materials(blob, target, temp)
-        new.from_mesh(temp)
-    bpy.data.meshes.remove(temp)
-    new.to_mesh(target.data)
-    new.free()
+def obt(name, data=None, local=False, force=False, overwrite=None, parent=None, hollow=True):
+    scope = None
+
+    if local:
+        scope = bpy.context.scene.objects
+
+    if hollow:
+        data = blpy.obt(
+            bpy.data.meshes,
+            name,
+            force = force,
+            overwrite = overwrite,
+        )
+
+    blob = blpy.obt(
+        bpy.data.objects,
+        name,
+        data = data,
+        scope = scope,
+        force = force,
+        overwrite = overwrite,
+    )
+
+    if parent is not None and blob is not None and name not in parent.objects:
+        parent.objects.link(blob)
+    return blob
+
+def unlink(blcol, objects=False, recursive=False):
+    if recursive:
+        collections = [c for c in blcol.children]
+        while collections:
+            child = collections.pop()
+            unlink(child, recursive=True, objects=objects)
+            blcol.children.unlink(child)
+    if objects:
+        objects = [o for o in blcol.objects]
+        while objects:
+            blcol.objects.unlink(objects.pop())
+    return None
+
+def remove(blob, purge_data=True, recusive=True):
+    if recursive:
+        objects = [o for o in blob.children if o.users <= 1]
+        while objects:
+            remove(objects.pop(), data=True, recursive=True)
+    if purge_data and blob.data.users <= 1:
+        match blob.type:
+            case 'MESH':
+                bpy.data.meshes.remove(blob.data)
+            case 'EMPTY':
+                pass
+            case _:
+                pass
+    if blob is not None:
+        bpy.data.objects.remove()
     return None

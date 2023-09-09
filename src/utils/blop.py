@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import bpy
 
-class UTILS_OT_Nothing(bpy.types.Operator):
-    bl_idname = "utils.nothing"
+class UTILS_OT_Placeholder(bpy.types.Operator):
+    bl_idname = "utils.placeholder"
     bl_label = ""
 
     def execute(self, context):
