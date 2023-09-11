@@ -290,4 +290,3 @@ class IO3DM_Importer:
         bpy.data.orphans_purge(do_recursive=True)
         self.profile_code(True)
         return None
-

@@ -43,8 +43,8 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
     mesh_faces : bpy.props.EnumProperty(
         name = "Faces",
         items = [
-            ('SPLIT','Split', ''),
-            ('JOIN','Join',''),
+            ('SPLIT',"Split", ""),
+            ('JOIN',"Join",""),
         ],
         default = 'JOIN',
     )
@@ -52,8 +52,8 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
     mesh_shading : bpy.props.EnumProperty(
         name = "Faces",
         items = [
-            ('FLAT','Flat',''),
-            ('SMOOTH','Smooth', ''),
+            ('FLAT',"Flat",""),
+            ('SMOOTH',"Smooth", ""),
         ],
         default = 'SMOOTH',
     )
@@ -61,12 +61,11 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
     block_instancing : bpy.props.EnumProperty(
         name = "Block Instancing",
         items = [
-            ('COLLECTION_INSTANCE','Collection Instance',''),
-            ('SINGLE_MESH','Single Mesh', ''),
+            ('COLLECTION_INSTANCE',"Collection Instance",""),
+            ('SINGLE_MESH',"Single Mesh", ""),
         ],
         default = 'SINGLE_MESH',
     )
-    pass
 
 class IO3DM_OT_Load(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_idname = f"{addon.name}.load"
@@ -129,7 +128,7 @@ class IO3DM_OT_Load(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         except Exception as e:
             self.report({"ERROR"}, "import_3dm :: An error has occurred, check logs in system console.")
             import_3dm.log("An error has occurred. Exiting early.")
-            logging.exception("An error has occurred. Exiting early.")
+            logging.exception(": An error has occurred. Exiting early.")
             return {"CANCELLED"}
         return {"FINISHED"}
 

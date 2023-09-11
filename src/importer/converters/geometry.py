@@ -58,13 +58,13 @@ def mesh(rhob, scale, options):
     blmesh = bpy.data.meshes.new(name=str(rhob.Attributes.Id)) # Create empty mesh
     blmesh.from_pydata(vertices, [], faces)
 
-    if options.mesh_shading == "SMOOTH":
-        blmesh.use_auto_smooth = 1
+    if options.mesh_shading == 'SMOOTH':
+        blmesh.use_auto_smooth = True
 
         for face in blmesh.polygons:
             face.use_smooth = True
 
-    if options.mesh_faces == "JOIN":
+    if options.mesh_faces == 'JOIN':
         mesh_remove_doubles(blmesh)
     return blmesh
 
@@ -76,7 +76,7 @@ def mesh_remove_doubles(blmesh):
     return blmesh
 
 def curve(rhob, scale, options):
-    blcurve = bpy.data.curves.new(name=str(rhob.Attributes.Id), type="CURVE") # Create empty curve
+    blcurve = bpy.data.curves.new(name=str(rhob.Attributes.Id), type='CURVE') # Create empty curve
     bldata = _IMPORT_CURVE[type(rhob.Geometry)](rhob.Geometry, blcurve, scale)
     return blcurve
 
@@ -121,7 +121,6 @@ def curve_nurbs(rcurve, bcurve, scale):
         rpt = rcurve.Points[i]
         nurbs.points[i].co = (rpt.X * scale, rpt.Y * scale, rpt.Z * scale, rpt.W * scale)
 
-    #nurbs.use_bezier_u = True
     nurbs.use_endpoint_u = True
     nurbs.order_u = rcurve.Order
     return nurbs
@@ -145,9 +144,9 @@ def curve_arc(rcurve, bcurve, scale):
     t1 = normal.cross(r1)
     t2 = normal.cross(r2)
 
-    '''
+    """
     Temporary arc
-    '''
+    """
     arc = bcurve.splines.new('NURBS')
 
     arc.use_cyclic_u = False
@@ -164,24 +163,24 @@ def curve_arc(rcurve, bcurve, scale):
 
     arc.points[3].co = (ept.x, ept.y, ept.z, 1)
 
-    '''
+    """
     print("ARC")
     print("    StartPoint:", rcurve.Arc.StartPoint)
     print("      EndPoint:", rcurve.Arc.EndPoint)
     print("        Center:", rcurve.Arc.Center)
     print("        Radius:", rcurve.Radius)
-    '''
+    """
 
     arc.use_endpoint_u = True
     arc.order_u = 3
     return arc
 
 def curve_polycurve(rcurve, bcurve, scale):
-
     for seg in range(rcurve.SegmentCount):
         segcurve = rcurve.SegmentCurve(seg)
         if type(segcurve) in _IMPORT_CURVE.keys():
             _IMPORT_CURVE[type(segcurve)](segcurve, bcurve, scale)
+    return None
 
 _IMPORT_CURVE = {
     rhino3dm.ArcCurve : curve_arc,
