@@ -158,11 +158,14 @@ class IO3DM_OT_Load(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
         col = layout.column(align=True)
         col.enabled = self.options.filter_objects
-        col.operator(utils.UTILS_OT_Placeholder.bl_idname, text="Blocks", depress=False)
+        col.operator(utils.UTILS_OT_Placeholder.bl_idname, text="Blocks", depress=self.options.filter_objects)
         col.row(align=True).prop(self.options, "block_instancing", expand=True)
 
         col = layout.column(align=True)
         col.prop(self.options, "filter_materials", toggle=True)
+        sub = col.column(align=True)
+        sub.enabled = self.options.filter_materials
+        sub.row(align=True).prop(self.options, "cycles_displacement_method", expand=True)
 
         col = layout.column(align=True)
         col.prop(self.options, "filter_cameras", toggle=True)
