@@ -270,7 +270,7 @@ class IO3DM_Importer:
                 self.log("Populating instances")
                 for rhdef_id in self.block_pairs.keys():
                     bldef = self.block_def[rhdef_id]
-                    converters.blocks.pop_single_mesh(bldef, self.block_pairs[rhdef_id])
+                    converters.blocks.pop_single_mesh(bldef, self.block_pairs[rhdef_id], self.options)
                 self.profile_code(True)
         return None
 

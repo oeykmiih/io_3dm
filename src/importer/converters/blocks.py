@@ -59,6 +59,15 @@ def ref_single_mesh(rhref, bldef, name=None, scale=1.0):
     blref.matrix_world = mathutils.Matrix(transform)
     return blref
 
-def pop_single_mesh(bldef, bldef_obs):
-    utils.blob.join(bldef, bldef_obs)
+def pop_single_mesh(bldef, bldef_obs, options=None):
+    if options.mesh_faces == 'JOIN':
+        utils.blob.join(bldef, bldef_obs, remove_doubles=True)
+    else:
+        utils.blob.join(bldef, bldef_obs)
+
+    blmesh = bldef.data
+
+
+    if options.mesh_shading == 'SMOOTH':
+        blmesh.use_auto_smooth = True
     return None
