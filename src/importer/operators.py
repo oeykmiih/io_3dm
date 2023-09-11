@@ -46,7 +46,7 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
             ('SPLIT','Split', ''),
             ('JOIN','Join',''),
         ],
-        default = 'SPLIT',
+        default = 'JOIN',
     )
 
     mesh_shading : bpy.props.EnumProperty(
@@ -55,7 +55,7 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
             ('FLAT','Flat',''),
             ('SMOOTH','Smooth', ''),
         ],
-        default = 'FLAT',
+        default = 'SMOOTH',
     )
 
     block_instancing : bpy.props.EnumProperty(
