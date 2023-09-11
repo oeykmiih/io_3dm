@@ -10,7 +10,7 @@ bl_info = {
     "wiki_url": "",
     "category": "Import-Export",
 }
-__version__ = "2.0.2"
+__version__ = "2.0.2dev"
 __addon__ = "io_import_3dm"
 __prefix__ = "IO3DM"
 
