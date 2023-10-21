@@ -21,7 +21,7 @@ import sys
 
 
 LIBRARIES = [
-    "rhino3dm",
+    "rhino",
 ]
 
 if LIBRARIES:
