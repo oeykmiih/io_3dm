@@ -252,7 +252,10 @@ class IO3DM_Importer:
                 rhmat = self.file.Materials.FindIndex(rhlay.RenderMaterialIndex)
             case rhino3dm.ObjectMaterialSource.MaterialFromObject:
                 rhmat = self.file.Materials.FindIndex(rhob.Attributes.MaterialIndex)
-        if rhmat.Name == '':
+            case _:
+                self.verb(f"{rhob.Attributes.MaterialSource} NOT YET SUPPORTED.")
+                rhmat = None
+        if rhmat is None or rhmat.Name == '':
             blmat = self.materials[converters.materials.RHINO_DEFAULT.Name]
         else:
             blmat = self.materials[rhmat.Name]
