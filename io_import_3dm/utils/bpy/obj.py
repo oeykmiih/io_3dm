@@ -3,7 +3,7 @@ import bpy
 import bmesh
 import mathutils
 
-from . import blpy
+from . import meta
 
 #CREDIT: https://blender.stackexchange.com/a/159540
 def apply_transform(ob, loc=False, rot=False, sca=False):
@@ -39,13 +39,14 @@ def join(target, source, remove_doubles=False):
     new.from_mesh(target.data)
     temp = bpy.data.meshes.new("temp")
     for blob in source:
-        _bmesh = bmesh.new()
-        _bmesh.from_mesh(blob.data)
-        _bmesh.transform(blob.matrix_world)
-        _bmesh.to_mesh(temp)
-        _bmesh.free()
-        mimic_materials(blob, target, temp)
-        new.from_mesh(temp)
+        if blob.type == 'MESH':
+            _bmesh = bmesh.new()
+            _bmesh.from_mesh(blob.data)
+            _bmesh.transform(blob.matrix_world)
+            _bmesh.to_mesh(temp)
+            _bmesh.free()
+            mimic_materials(blob, target, temp)
+            new.from_mesh(temp)
     bpy.data.meshes.remove(temp)
     if remove_doubles:
         bmesh.ops.remove_doubles(new, verts=new.verts, dist=0.001)
@@ -84,15 +85,15 @@ def obt(name, data=None, local=False, force=False, overwrite=None, parent=None, 
     if local:
         scope = bpy.context.scene.objects
 
-    if hollow:
-        data = blpy.obt(
+    if data is None and hollow:
+        data = meta.obt(
             bpy.data.meshes,
             name,
             force = force,
             overwrite = overwrite,
         )
 
-    blob = blpy.obt(
+    blob = meta.obt(
         bpy.data.objects,
         name,
         data = data,
@@ -101,7 +102,7 @@ def obt(name, data=None, local=False, force=False, overwrite=None, parent=None, 
         overwrite = overwrite,
     )
 
-    if parent is not None and blob is not None and name not in parent.objects:
+    if parent is not None and blob is not None and blob.name not in parent.objects:
         parent.objects.link(blob)
     return blob
 
@@ -118,7 +119,7 @@ def unlink(blcol, objects=False, recursive=False):
             blcol.objects.unlink(objects.pop())
     return None
 
-def remove(blob, purge_data=True, recusive=True):
+def remove(blob, purge_data=True, recursive=True):
     if recursive:
         objects = [o for o in blob.children if o.users <= 1]
         while objects:
@@ -132,5 +133,5 @@ def remove(blob, purge_data=True, recusive=True):
             case _:
                 pass
     if blob is not None:
-        bpy.data.objects.remove()
+        bpy.data.objects.remove(blob)
     return None

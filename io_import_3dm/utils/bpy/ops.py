@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import bpy
 
+from . import addon
+
 class UTILS_OT_Placeholder(bpy.types.Operator):
     bl_idname = "utils.placeholder"
     bl_label = ""
@@ -37,13 +39,32 @@ class UTILS_OT_Select(bpy.types.Operator):
             if self.toggle:
                 if obj.select_get():
                     obj.select_set(False)
+                    if context.active_object == obj:
+                        context.view_layer.objects.active = None
                 else:
                     obj.select_set(True)
-                    bpy.context.view_layer.objects.active = obj
+                    context.view_layer.objects.active = obj
             elif self.deselect:
                 obj.select_set(False)
+                context.view_layer.objects.active = None
             else:
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
-                bpy.context.view_layer.objects.active = obj
+                context.view_layer.objects.active = obj
         return {'FINISHED'}
+
+CLASSES = [
+    UTILS_OT_Placeholder,
+    UTILS_OT_Select,
+]
+
+def register():
+    addon.register_classes(CLASSES)
+    return None
+
+def unregister():
+    addon.unregister_classes(CLASSES)
+    return None
+
+# TODO: Find a cleaner way to register classes, and actually unregister them.
+register()
