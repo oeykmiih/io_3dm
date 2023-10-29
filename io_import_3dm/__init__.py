@@ -3,15 +3,14 @@ bl_info = {
     "name": "Import Rhinoceros 3D",
     "author": "Nathan 'jesterKing' Letwory, Joel Putnam, Tom Svilans, Lukas Fertig, joao baptista",
     "blender": (3, 3, 0),
-    "version": (2, 0, 2),
+    "version": (0, 3, 0),
     "location": "File > Import > Rhinoceros 3D (.3dm)",
     "description": "This addon lets you import Rhinoceros 3dm files",
     "warning": "The importer doesn't handle all data in 3dm files yet",
     "wiki_url": "",
     "category": "Import-Export",
 }
-__version__ = "2.0.2-231021"
-__addon__ = "io_import_3dm"
+__version__ = "0.3.0-231029"
 __prefix__ = "IO3DM"
 
 import importlib
