@@ -13,62 +13,65 @@ bl_info = {
 __version__ = "0.3.0-231029"
 __prefix__ = "IO3DM"
 
-import importlib
-import os
-import site
-import sys
+from io_import_3dm import utils
+addon = utils.bpy.Addon()
 
-
-LIBRARIES = [
-    "rhino",
-]
-
-if LIBRARIES:
-    LIB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "libs"))
-    try:
-        if os.path.isdir(LIB_DIR) and LIB_DIR not in sys.path:
-            sys.path.insert(0, LIB_DIR)
-        for name in LIBRARIES:
-            importlib.import_module(name)
-    finally:
-        if LIB_DIR in sys.path:
-            sys.path.remove(LIB_DIR)
+LIBRARIES = {
+    "rhino" : None,
+}
+LIBRARIES = utils.import_libraries(LIBRARIES)
 
 MODULES = {
     "properties" : None,
     "importer" : None,
-    "utils" : None,
 }
 
-if "bpy" in locals():
-    for name, module in MODULES.items():
-        MODULES[name] = importlib.reload(f"{__package__}.{name}")
-else:
-    for name, module in MODULES.items():
-        MODULES[name] = importlib.import_module(f"{__package__}.{name}")
-
+MODULES = utils.import_modules(MODULES)
 import bpy
 
-def cleanse_modules():
-    """Remove all plugin modules from sys.modules, will load them again, creating an effective hit-reload soluton"""
-    # https://devtalk.blender.org/t/plugin-hot-reload-by-cleaning-sys-modules/20040
+@addon.property
+class Preferences(bpy.types.AddonPreferences):
+    bl_idname = addon.name
 
-    import sys
-    all_modules = sys.modules
-    all_modules = dict(sorted(all_modules.items(),key= lambda x:x[0])) #sort them
+    items = (name for name, module in MODULES.items() if hasattr(module, "UI"))
 
-    for key in all_modules.keys():
-        if key.startswith(__name__):
-            del sys.modules[key]
-    return None
+    ui_prefs_tab: bpy.props.EnumProperty(
+        name = "ui_prefs_tab",
+        description = "",
+        items = utils.bpy.enum_from_list(items, raw=True),
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        # col.row().prop(self, "ui_prefs_tab", expand=True)
+        # properties = getattr(self, self.ui_prefs_tab)
+        # MODULES[self.ui_prefs_tab].UI(properties, layout)
+        return None
+
+@addon.property
+class WindowManager(bpy.types.PropertyGroup):
+    pass
+
+@addon.property
+class Scene(bpy.types.PropertyGroup):
+    pass
+
+PROPS = [
+    Preferences,
+    WindowManager,
+    Scene,
+]
+
 
 def register():
-    for module in MODULES.values():
-        module.register()
+    utils.bpy.register_modules(MODULES)
+    utils.bpy.register_classes(PROPS)
+    addon.set_properties(PROPS)
     return None
 
 def unregister():
-    for module in reversed(MODULES.values()):
-        module.unregister()
-    cleanse_modules()
+    utils.bpy.unregister_classes(PROPS)
+    utils.bpy.unregister_modules(MODULES)
+    utils.cleanse_globals()
     return None
