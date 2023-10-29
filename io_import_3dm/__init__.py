@@ -22,8 +22,8 @@ LIBRARIES = {
 LIBRARIES = utils.import_libraries(LIBRARIES)
 
 MODULES = {
-    "properties" : None,
-    "importer" : None,
+    "export" : None,
+    "import" : None,
 }
 
 MODULES = utils.import_modules(MODULES)
