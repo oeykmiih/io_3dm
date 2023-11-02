@@ -142,7 +142,9 @@ def create_materials(rhmats, pytables, options=None):
         blmat = converters.material.new(rhmat, name=rhmat.Name, options=options)
         blmat.use_fake_user = True
         materials.append(blmat)
-    materials.append(converters.material.default())
+    blmat = converters.material.default()
+    blmat.use_fake_user = True
+    materials.append(blmat)
     return None
 
 @profile
