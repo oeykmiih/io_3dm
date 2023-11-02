@@ -2,6 +2,7 @@
 import bpy
 import bmesh
 import mathutils
+import math
 import rhino3dm
 
 def vector(rhvector):
@@ -38,6 +39,8 @@ def mesh(rhob, scale, options):
     for mesh in rhmesh:
         if mesh:
             rhmesh_join(mesh)
+            mesh.Faces.CullDegenerateFaces()
+            mesh.Faces.ConvertTrianglesToQuads(math.pi / 90.0, 0.875)
 
             faces.extend([list(map(lambda x: x + findex, mesh.Faces[f])) for f in range(len(mesh.Faces))])
 
