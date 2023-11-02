@@ -36,20 +36,19 @@ def mesh(rhob, scale, options):
 
     # Add faces and vertices to lists
     for mesh in rhmesh:
-        if not mesh:
-            continue
-        faces.extend([list(map(lambda x: x + findex, mesh.Faces[f])) for f in range(len(mesh.Faces))])
+        if mesh:
 
-        # Rhino always uses 4 values to describe faces, which can lead to
-        ## invalid faces in Blender. Tris will have a duplicate index for the 4th
-        ## value.
-        for f in faces:
-            if f[-1] == f[-2]:
-                del f[-1]
+            faces.extend([list(map(lambda x: x + findex, mesh.Faces[f])) for f in range(len(mesh.Faces))])
 
+            # Rhino always uses 4 values to describe faces, which can lead to
+            ## invalid faces in Blender. Tris will have a duplicate index for the 4th
+            ## value.
+            for f in faces:
+                if f[-1] == f[-2]:
+                    del f[-1]
 
-        findex = findex + len(mesh.Vertices)
-        vertices.extend([(mesh.Vertices[v].X * scale, mesh.Vertices[v].Y * scale, mesh.Vertices[v].Z * scale) for v in range(len(mesh.Vertices))])
+            findex = findex + len(mesh.Vertices)
+            vertices.extend([(mesh.Vertices[v].X * scale, mesh.Vertices[v].Y * scale, mesh.Vertices[v].Z * scale) for v in range(len(mesh.Vertices))])
 
     blmesh = bpy.data.meshes.new(name=str(rhob.Attributes.Id)) # Create empty mesh
     blmesh.from_pydata(vertices, [], faces)
