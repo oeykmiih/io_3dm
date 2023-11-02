@@ -51,35 +51,3 @@ def ref_collection_instance(rhref, name=None, scale=1.0):
 
     blref.matrix_world = mathutils.Matrix(transform)
     return blref
-
-def def_single_mesh(rhdef, name=None):
-    name = name if name is not None else rhdef.Name
-    bldata = utils.bpy.obt(bpy.data.meshes, str(rhdef.Id), force=True)
-    bldef =  utils.bpy.obt(bpy.data.objects, name, data=bldata, force=True)
-    return bldef
-
-def ref_single_mesh(rhref, bldef, name=None, scale=1.0):
-    name = name if name is not None else str(rhref.Attributes.Id)
-    blref =  utils.bpy.obt(bpy.data.objects, name, data=bldef.data, force=True)
-
-    transform=list(rhref.Geometry.Xform.ToFloatArray(1))
-    transform=[transform[0:4],transform[4:8], transform[8:12], transform[12:16]]
-    transform[0][3]*=scale
-    transform[1][3]*=scale
-    transform[2][3]*=scale
-
-    blref.matrix_world = mathutils.Matrix(transform)
-    return blref
-
-def pop_single_mesh(bldef, bldef_obs, options=None):
-    if options.mesh_faces == 'JOIN':
-        utils.bpy.obj.join(bldef, bldef_obs, remove_doubles=True)
-    else:
-        utils.bpy.obj.join(bldef, bldef_obs)
-
-    blmesh = bldef.data
-
-
-    if options.mesh_shading == 'SMOOTH':
-        blmesh.use_auto_smooth = True
-    return None
