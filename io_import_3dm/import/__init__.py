@@ -59,12 +59,19 @@ def _import(operator, context):
 
     options.scale = calculate_scale(context, rhfile)
 
-    create_cameras(rhfile.NamedViews, pytables, options=options)
-    create_materials(rhfile.Materials, pytables, options=options)
-    create_layers(rhfile.Layers, pytables, options=options)
+    if options.filter_cameras and len(rhfile.NamedViews) > 0:
+        create_cameras(rhfile.NamedViews, pytables, options=options)
 
-    purge(update)
-    handle_objects(rhfile, pytables, options=options)
+    create_materials(rhfile.Materials, pytables, options=options)
+
+    if len(rhfile.Layers) > 0:
+        create_layers(rhfile.Layers, pytables, options=options)
+
+    if update:
+        purge()
+
+    if len(rhfile.Objects) > 0:
+        handle_objects(rhfile, pytables, options=options)
 
     link_to_scene(context, pytables["collections"]["project"])
     return {'FINISHED'}
@@ -86,10 +93,9 @@ def init(context, options=None, update=None):
     return blcol
 
 @profile
-def purge(update):
-    if update:
-        log("Purging")
-        bpy.data.orphans_purge(do_recursive=True)
+def purge():
+    log("Purging")
+    bpy.data.orphans_purge(do_recursive=True)
     return None
 
 @profile
@@ -125,13 +131,16 @@ def calculate_scale(context, rhfile):
 
 @profile
 def create_cameras(rhcams, pytables, options=None):
-    if len(rhcams) > 0:
-        log("Importing cameras")
-        blcol = pytables["collections"]["cameras"] =  utils.bpy.col.obt(f"{options.name}::#Cameras", parent=pytables["collections"]["project"], force=True)
+    log("Importing cameras")
+    blcol = pytables["collections"]["cameras"] =  utils.bpy.col.obt(
+        f"{options.name}::#Cameras",
+        parent=pytables["collections"]["project"],
+        force=True,
+    )
 
-        for rhcam in rhcams:
-            blcam = converters.camera.new(rhcam, f"{options.name}::{rhcam.Name}", options=options)
-            blcol.objects.link(blcam)
+    for rhcam in rhcams:
+        blcam = converters.camera.new(rhcam, f"{options.name}::{rhcam.Name}", options=options)
+        blcol.objects.link(blcam)
     return None
 
 @profile
@@ -149,13 +158,16 @@ def create_materials(rhmats, pytables, options=None):
 
 @profile
 def create_layers(rhlayers, pytables, options=None):
-    if len(rhlayers) > 0:
-        log("Importing layers")
-        layers = pytables["layers"] = []
-        top_layer = pytables["collections"]["layers"] = utils.bpy.col.obt(f"{options.name}::#Layers", parent=pytables["collections"]["project"], force=True)
-        for rhlay in rhlayers:
-            bllay = create_layer(rhlay, rhlayers, layers, top_layer, options)
-            layers.append(bllay)
+    log("Importing layers")
+    layers = pytables["layers"] = []
+    top_layer = pytables["collections"]["layers"] = utils.bpy.col.obt(
+        f"{options.name}::#Layers",
+        parent=pytables["collections"]["project"],
+        force=True,
+    )
+    for rhlay in rhlayers:
+        bllay = create_layer(rhlay, rhlayers, layers, top_layer, options)
+        layers.append(bllay)
     return None
 
 def create_layer(rhlay, rhlayers, layers, top_layer, options=None):
@@ -179,9 +191,8 @@ def handle_objects(rhfile, pytables, options=None):
                 rhobs.append(rhob)
         return rhobs, rhbks
 
-    if len(rhfile.Objects) > 0:
-        layers = pytables["layers"]
-        rhobs, rhbks = _sort(rhfile.Objects)
+    layers = pytables["layers"]
+    rhobs, rhbks = _sort(rhfile.Objects)
 
         create_objects(rhobs, rhfile, pytables, options=options)
         create_blocks(rhbks, rhfile, pytables, options=options)
@@ -203,17 +214,16 @@ def get_material(rhob, rhfile, materials, inherited=None):
 
 @profile
 def create_objects(rhobs, rhfile, pytables, options=None):
-    if len(rhobs) > 0:
-        log("Importing objects")
-        materials = pytables["materials"]
-        layers = pytables["layers"]
+    log("Importing objects")
+    materials = pytables["materials"]
+    layers = pytables["layers"]
 
-        for rhob in rhobs:
-            if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
-                blob = create_object(rhob, rhfile, materials, options=options)
-                layers[rhob.Attributes.LayerIndex].objects.link(blob)
-            else:
-                pass
+    for rhob in rhobs:
+        if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
+            blob = create_object(rhob, rhfile, materials, options=options)
+            layers[rhob.Attributes.LayerIndex].objects.link(blob)
+        else:
+            pass
     return None
 
 def create_object(rhob, rhfile, materials, options=None, inherited=None):
@@ -228,18 +238,17 @@ def create_object(rhob, rhfile, materials, options=None, inherited=None):
 
 @profile
 def create_blocks(rhobs, rhfile, pytables, options=None):
-    if len(rhobs) > 0:
-        log("Importing blocks")
-        blocks = pytables["blocks"] = {}
-        materials = pytables["materials"]
-        layers = pytables["layers"]
+    log("Importing blocks")
+    blocks = pytables["blocks"] = {}
+    materials = pytables["materials"]
+    layers = pytables["layers"]
 
-        for rhob in rhobs:
-            if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
-                blob = create_block(rhob, rhfile, blocks, materials, options=options)
-                layers[rhob.Attributes.LayerIndex].objects.link(blob)
-            else:
-                pass
+    for rhob in rhobs:
+        if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
+            blob = create_block(rhob, rhfile, blocks, materials, options=options)
+            layers[rhob.Attributes.LayerIndex].objects.link(blob)
+        else:
+            pass
     return None
 
 def create_block(rhob, rhfile, blocks, materials, options=None, inherited=None):
