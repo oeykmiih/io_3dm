@@ -42,7 +42,7 @@ def new(rhmat, name=None, options=None):
 
         blmat.use_nodes = True
         blmat.diffuse_color[3] = 1.0-rhmat.Transparency # Viewport transparency
-        # blmat.cycles.displacement_method = options.cycles_displacement_method
+        blmat.cycles.displacement_method = options.material_displacement
 
         principled = bpy_extras.node_shader_utils.PrincipledBSDFWrapper(blmat, is_readonly=False)
         principled.base_color = (r/255.0, g/255.0, b/255.0)

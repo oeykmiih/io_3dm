@@ -53,6 +53,8 @@ def _import(operator, context):
         operator.report({'ERROR'}, f"Failed to load '{operator.filepath}'")
         return {'CANCELLED'}
 
+    patch_options(options)
+
     pytables = {}
     pytables["collections"] = {}
     pytables["collections"]["project"] = init(context, options=options, update=update)
@@ -75,6 +77,23 @@ def _import(operator, context):
 
     link_to_scene(context, pytables["collections"]["project"])
     return {'FINISHED'}
+
+def patch_options(options):
+    env_geometry = vars(converters.geometry)
+
+    env_geometry["RHINO_IMPORT"] = env_geometry["RHINO_IMPORT_DEFAULT"].copy()
+
+    if not options.filter_mesh_curves:
+        env_geometry["RHINO_IMPORT"].pop(rhino3dm.ObjectType.Curve)
+
+    if options.mesh_faces == 'JOIN':
+        env_geometry["rhmesh_join"] = env_geometry["rhmesh_remove_doubles"]
+
+    match options.block_instancing:
+        case 'SINGLE_MESH':
+            converters.block.definition = converters.block.def_single_mesh
+            converters.block.instance = converters.block.ins_single_mesh
+    return None
 
 @profile
 def init(context, options=None, update=None):
@@ -194,7 +213,10 @@ def handle_objects(rhfile, pytables, options=None):
     layers = pytables["layers"]
     rhobs, rhbks = _sort(rhfile.Objects)
 
+    if options.filter_objects and len(rhobs) > 0:
         create_objects(rhobs, rhfile, pytables, options=options)
+
+    if options.filter_blocks and len(rhbks) > 0:
         create_blocks(rhbks, rhfile, pytables, options=options)
     return None
 
@@ -284,13 +306,52 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty()
     scale : bpy.props.FloatProperty()
 
-    block_instancing : bpy.props.EnumProperty(
-        name = "Block Instancing",
+    filter_blocks : bpy.props.BoolProperty(
+        name = "Blocks",
+        default = True,
+    )
+
+    filter_cameras : bpy.props.BoolProperty(
+        name = "Cameras",
+        default = False,
+    )
+
+    filter_objects : bpy.props.BoolProperty(
+        name = "Objects",
+        default = True,
+    )
+
+    filter_mesh_curves : bpy.props.BoolProperty(
+        name = "Curves",
+        default = False,
+    )
+
+    mesh_faces : bpy.props.EnumProperty(
+        name = "Faces",
         items = [
-            ('COLLECTION_INSTANCE',"Collection Instance",""),
+            ('JOIN',"Join",""),
+            ('SPLIT',"Split", ""),
+        ],
+        default = 'JOIN',
+    )
+
+    block_instancing : bpy.props.EnumProperty(
+        name = "Instancing",
+        items = [
+            # ('COLLECTION_INSTANCE',"Collection Instance",""),
             ('SINGLE_MESH',"Single Mesh", ""),
         ],
         default = 'SINGLE_MESH',
+    )
+
+    material_displacement : bpy.props.EnumProperty(
+        name = "Displacement",
+        items = [
+            ('BUMP', "Bump Only", ""),
+            ('DISPLACEMENT', "Displacement Only", ""),
+            ('BOTH', "Both", ""),
+        ],
+        default = 'BOTH',
     )
 
 class IO3DM_OT_Import(bpy.types.Operator):
@@ -336,16 +397,18 @@ class IO3DM_OT_Import(bpy.types.Operator):
     def execute(self, context):
         session = addon.session
         session.filepath = self.filepath
-        if self.name in self.get_loaded(context):
-            self.update = True
+        self.update = True if self.name in self.get_loaded(context) else False
         return _import(self, context)
 
     def draw(self, context):
-        layout = self.layout.box()
-        col = layout.column()
+        layout = self.layout
+        options = self.options
+
+        col = layout.box().column()
+        col.use_property_split = True
+        col.use_property_decorate = False
 
         loaded = self.get_loaded(context)
-
         if self.name in loaded:
             utils.bpy.ui.alert(col, text="Overriding")
             col.prop(self, "loaded", text="Reload?")
@@ -356,6 +419,41 @@ class IO3DM_OT_Import(bpy.types.Operator):
             row.prop(self, "loaded", text="Reload?")
 
         col.prop(self, "name")
+
+        col =  layout.box().column()
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.label(text="Filter")
+
+        col.prop(options, "filter_cameras")
+        col.prop(options, "filter_blocks")
+        col.prop(options, "filter_objects")
+
+        col =  layout.box().column()
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.label(text="Blocks")
+        col.enabled = options.filter_blocks
+
+        col.prop(options, "block_instancing")
+
+        col =  layout.box().column()
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.label(text="Mesh")
+
+        col.prop(options, "mesh_faces")
+
+        sub = col.column()
+        sub.label(text="Filter")
+        sub.prop(options, "filter_mesh_curves")
+
+        col =  layout.box().column()
+        col.use_property_split = True
+        col.use_property_decorate = False
+        col.label(text="Materials")
+
+        col.prop(options, "material_displacement")
         return None
 
     def invoke(self, context, event):

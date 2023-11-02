@@ -37,6 +37,7 @@ def mesh(rhob, scale, options):
     # Add faces and vertices to lists
     for mesh in rhmesh:
         if mesh:
+            rhmesh_join(mesh)
 
             faces.extend([list(map(lambda x: x + findex, mesh.Faces[f])) for f in range(len(mesh.Faces))])
 
@@ -54,12 +55,12 @@ def mesh(rhob, scale, options):
     blmesh.from_pydata(vertices, [], faces)
     return blmesh
 
-def mesh_remove_doubles(blmesh):
-    bm = bmesh.new()
-    bm.from_mesh(blmesh)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
-    bm.to_mesh(blmesh)
-    return blmesh
+def rhmesh_join(mesh):
+    return None
+
+def rhmesh_remove_doubles(mesh):
+    mesh.Vertices.CombineIdentical(True, True)
+    return mesh
 
 def curve(rhob, scale, options):
     blcurve = bpy.data.curves.new(name=str(rhob.Attributes.Id), type='CURVE') # Create empty curve
@@ -157,11 +158,13 @@ _IMPORT_CURVE = {
     rhino3dm.PolyCurve : curve_polycurve,
 }
 
-RHINO_IMPORT = {
+RHINO_IMPORT_DEFAULT = {
     rhino3dm.ObjectType.Brep : mesh,
     rhino3dm.ObjectType.Extrusion : mesh,
     rhino3dm.ObjectType.Mesh : mesh,
     rhino3dm.ObjectType.SubD : mesh,
-    # rhino3dm.ObjectType.Curve : curve,
+    rhino3dm.ObjectType.Curve : curve,
     rhino3dm.ObjectType.InstanceReference : None,
 }
+
+RHINO_IMPORT = RHINO_IMPORT_DEFAULT.copy()

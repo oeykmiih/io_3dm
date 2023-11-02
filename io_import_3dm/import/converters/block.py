@@ -6,28 +6,28 @@ import rhino3dm
 
 from io_import_3dm import utils
 
-def definition(rhdef, children, name=None, options=None):
+def def_single_mesh(rhdef, children, name=None, options=None):
     name = name if name is not None else rhdef.Name
-    match options.block_instancing:
-        case 'SINGLE_MESH':
-            bldata = utils.bpy.obt(bpy.data.meshes, str(rhdef.Id), force=True)
-            bldef =  utils.bpy.obt(bpy.data.objects, name, data=bldata, force=True)
-            utils.bpy.obj.join(bldef, children)
+
+    bldata = utils.bpy.obt(bpy.data.meshes, str(rhdef.Id), force=True)
+    bldef =  utils.bpy.obt(bpy.data.objects, name, data=bldata, force=True)
+    utils.bpy.obj.join(bldef, children)
+
     return bldef
 
-def instance(rhref, bldef, name=None, options=None):
+def ins_single_mesh(rhref, bldef, name=None, options=None):
     name = name if name is not None else str(rhref.Attributes.Id)
-    match options.block_instancing:
-        case 'SINGLE_MESH':
-            blref =  utils.bpy.obt(bpy.data.objects, name, data=bldef.data, force=True)
 
-            transform=list(rhref.Geometry.Xform.ToFloatArray(1))
-            transform=[transform[0:4],transform[4:8], transform[8:12], transform[12:16]]
-            transform[0][3] *= 1
-            transform[1][3] *= 1
-            transform[2][3] *= 1
+    blref =  utils.bpy.obt(bpy.data.objects, name, data=bldef.data, force=True)
 
-            blref.matrix_world = mathutils.Matrix(transform)
+    transform=list(rhref.Geometry.Xform.ToFloatArray(1))
+    transform=[transform[0:4],transform[4:8], transform[8:12], transform[12:16]]
+    transform[0][3] *= 1
+    transform[1][3] *= 1
+    transform[2][3] *= 1
+
+    blref.matrix_world = mathutils.Matrix(transform)
+
     return blref
 
 def def_collection_instance(rhdef, name=None):
