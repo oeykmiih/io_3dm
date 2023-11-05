@@ -5,7 +5,7 @@ import bpy
 import rhino3dm
 import mathutils
 
-from io_import_3dm import utils
+from io_3dm import utils
 
 from . import geometry
 

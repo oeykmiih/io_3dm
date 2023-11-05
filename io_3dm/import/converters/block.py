@@ -4,7 +4,7 @@ import mathutils
 import bpy
 import rhino3dm
 
-from io_import_3dm import utils
+from io_3dm import utils
 
 def def_single_mesh(rhdef, children, name=None, options=None):
     name = name if name is not None else rhdef.Name

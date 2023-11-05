@@ -2,7 +2,7 @@
 import bpy
 import rhino3dm
 
-from io_import_3dm import utils
+from io_3dm import utils
 
 RHLAYER_ID = "00000000-0000-0000-0000-000000000000"
 

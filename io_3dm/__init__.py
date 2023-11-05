@@ -13,7 +13,7 @@ bl_info = {
 __version__ = "0.3.0-231102"
 __prefix__ = "IO3DM"
 
-from io_import_3dm import utils
+from io_3dm import utils
 addon = utils.bpy.Addon()
 
 LIBRARIES = {

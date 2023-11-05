@@ -2,7 +2,7 @@
 import bpy
 import rhino3dm
 
-from io_import_3dm import utils
+from io_3dm import utils
 from . import geometry
 
 def new(rhob, name=None, options=None):

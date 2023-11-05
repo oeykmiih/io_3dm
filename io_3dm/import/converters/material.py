@@ -4,7 +4,7 @@ import bpy_extras
 from bpy_extras import node_shader_utils
 import rhino3dm
 
-from io_import_3dm import utils
+from io_3dm import utils
 
 _BLACK = (0, 0, 0, 255)
 

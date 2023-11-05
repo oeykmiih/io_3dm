@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 import bpy
 
-from io_import_3dm import utils
+from io_3dm import utils
 addon = utils.bpy.Addon()
 
 class Collection(bpy.types.PropertyGroup):
