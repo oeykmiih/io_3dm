@@ -462,6 +462,10 @@ class IO3DM_OT_Import(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+def IO3DM_BT_Import(self, context):
+    self.layout.operator(IO3DM_OT_Import.bl_idname, text="Rhino3D (.3dm)")
+    return None
+
 @addon.property
 class WindowManager_Import(bpy.types.PropertyGroup):
     filepath : bpy.props.StringProperty(
@@ -477,9 +481,13 @@ CLASSES = [
 def register():
     utils.bpy.register_modules(MODULES)
     utils.bpy.register_classes(CLASSES)
+
+    bpy.types.TOPBAR_MT_file_import.append(IO3DM_BT_Import)
     return None
 
 def unregister():
+    bpy.types.TOPBAR_MT_file_import.remove(IO3DM_BT_Import)
+
     utils.bpy.unregister_classes(CLASSES)
     utils.bpy.unregister_modules(MODULES)
     return None
