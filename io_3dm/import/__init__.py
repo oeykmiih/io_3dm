@@ -87,7 +87,9 @@ def patch_options(options):
         env_geometry["RHINO_IMPORT"].pop(rhino3dm.ObjectType.Curve)
 
     if options.mesh_faces == 'JOIN':
-        env_geometry["rhmesh_join"] = env_geometry["rhmesh_remove_doubles"]
+        env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_true"]
+    else:
+        env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_false"]
 
     match options.block_instancing:
         case 'SINGLE_MESH':

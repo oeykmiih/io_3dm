@@ -38,7 +38,7 @@ def mesh(rhob, scale, options):
     # Add faces and vertices to lists
     for mesh in rhmesh:
         if mesh:
-            rhmesh_join(mesh)
+            rhmesh_join_maybe(mesh)
             mesh.Faces.CullDegenerateFaces()
             mesh.Faces.ConvertTrianglesToQuads(math.pi / 90.0, 0.875)
 
@@ -58,12 +58,15 @@ def mesh(rhob, scale, options):
     blmesh.from_pydata(vertices, [], faces)
     return blmesh
 
-def rhmesh_join(mesh):
+def rhmesh_join_maybe(rhmesh):
     return None
 
-def rhmesh_remove_doubles(mesh):
-    mesh.Vertices.CombineIdentical(True, True)
-    return mesh
+def rhmesh_join_false(rhmesh):
+    return None
+
+def rhmesh_join_true(rhmesh):
+    rhmesh.Vertices.CombineIdentical(True, True)
+    return None
 
 def curve(rhob, scale, options):
     blcurve = bpy.data.curves.new(name=str(rhob.Attributes.Id), type='CURVE') # Create empty curve
