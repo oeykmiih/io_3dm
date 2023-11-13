@@ -88,8 +88,10 @@ def patch_options(options):
 
     if options.mesh_faces == 'JOIN':
         env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_true"]
+        env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_true"]
     else:
         env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_false"]
+        env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_false"]
 
     match options.block_instancing:
         case 'SINGLE_MESH':

@@ -56,6 +56,10 @@ def mesh(rhob, scale, options):
 
     blmesh = bpy.data.meshes.new(name=str(rhob.Attributes.Id)) # Create empty mesh
     blmesh.from_pydata(vertices, [], faces)
+
+    # TODO: rhino3dm.CombineVertical not working properly? need to investigate,
+    ## for now use Blender's remove_double operator.
+    blmesh_join_maybe(blmesh)
     return blmesh
 
 def rhmesh_join_maybe(rhmesh):
@@ -66,6 +70,20 @@ def rhmesh_join_false(rhmesh):
 
 def rhmesh_join_true(rhmesh):
     rhmesh.Vertices.CombineIdentical(True, True)
+    return None
+
+def blmesh_join_maybe(blmesh):
+    return None
+
+def blmesh_join_false(blmesh):
+    return None
+
+def blmesh_join_true(blmesh):
+    new = bmesh.new()
+    new.from_mesh(blmesh)
+    bmesh.ops.remove_doubles(new, verts=new.verts, dist=0.001)
+    new.to_mesh(blmesh)
+    new.free()
     return None
 
 def curve(rhob, scale, options):
