@@ -12,7 +12,6 @@ def def_single_mesh(rhdef, children, name=None, options=None):
     bldata = utils.bpy.obt(bpy.data.meshes, str(rhdef.Id), force=True)
     bldef =  utils.bpy.obt(bpy.data.objects, name, data=bldata, force=True)
     utils.bpy.obj.join(bldef, children)
-
     return bldef
 
 def ins_single_mesh(rhref, bldef, name=None, options=None):
@@ -27,7 +26,6 @@ def ins_single_mesh(rhref, bldef, name=None, options=None):
     transform[2][3] *= 1
 
     blref.matrix_world = mathutils.Matrix(transform)
-
     return blref
 
 def def_collection_instance(rhdef, name=None):
