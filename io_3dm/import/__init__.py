@@ -339,6 +339,14 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
         default = 'JOIN',
     )
 
+    mesh_join_threshold : bpy.props.FloatProperty(
+        name = "Threshold",
+        default = 0.001,
+        min = 0.0,
+        subtype = 'DISTANCE',
+        unit = 'LENGTH',
+    )
+
     block_instancing : bpy.props.EnumProperty(
         name = "Instancing",
         items = [
@@ -447,6 +455,9 @@ class IO3DM_OT_Import(bpy.types.Operator):
         col.label(text="Mesh")
 
         col.prop(options, "mesh_faces")
+        sub = col.row(align=True)
+        sub.enabled = (options.mesh_faces == 'JOIN')
+        sub.prop(options, "mesh_join_threshold")
 
         sub = col.column()
         sub.label(text="Filter")

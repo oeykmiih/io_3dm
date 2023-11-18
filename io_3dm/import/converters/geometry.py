@@ -59,7 +59,7 @@ def mesh(rhob, scale, options):
 
     # TODO: rhino3dm.CombineVertical not working properly? need to investigate,
     ## for now use Blender's remove_double operator.
-    blmesh_join_maybe(blmesh)
+    blmesh_join_maybe(blmesh, options)
     return blmesh
 
 def rhmesh_join_maybe(rhmesh):
@@ -72,16 +72,16 @@ def rhmesh_join_true(rhmesh):
     rhmesh.Vertices.CombineIdentical(True, True)
     return None
 
-def blmesh_join_maybe(blmesh):
+def blmesh_join_maybe(blmesh, options):
     return None
 
-def blmesh_join_false(blmesh):
+def blmesh_join_false(blmesh, options):
     return None
 
-def blmesh_join_true(blmesh):
+def blmesh_join_true(blmesh, options):
     new = bmesh.new()
     new.from_mesh(blmesh)
-    bmesh.ops.remove_doubles(new, verts=new.verts, dist=0.001)
+    bmesh.ops.remove_doubles(new, verts=new.verts, dist=options.mesh_join_threshold)
     new.to_mesh(blmesh)
     new.free()
     return None
