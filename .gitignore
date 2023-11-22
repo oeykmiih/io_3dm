@@ -6,6 +6,8 @@ _tests/
 __pycache__/
 *.py[cod]
 *$py.class
+!*.pyd
+!*.pyi
 
 # MacOS
 .DS_Store
