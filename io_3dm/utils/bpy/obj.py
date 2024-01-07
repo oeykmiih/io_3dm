@@ -130,6 +130,9 @@ def remove(blob, purge_data=True, recursive=True):
                 bpy.data.meshes.remove(blob.data)
             case 'EMPTY':
                 pass
+            case 'CAMERA':
+                bpy.data.cameras.remove(blob.data)
+                return None
             case _:
                 pass
     if blob is not None:
