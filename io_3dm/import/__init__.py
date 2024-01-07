@@ -224,20 +224,6 @@ def handle_objects(rhfile, pytables, options=None):
         create_blocks(rhbks, rhfile, pytables, options=options)
     return None
 
-def get_material(rhob, rhfile, materials, inherited=None):
-    match rhob.Attributes.MaterialSource:
-        case rhino3dm.ObjectMaterialSource.MaterialFromObject:
-            blmat = materials[rhob.Attributes.MaterialIndex]
-        case rhino3dm.ObjectMaterialSource.MaterialFromLayer:
-            blmat = materials[rhfile.Layers.FindIndex(rhob.Attributes.LayerIndex).RenderMaterialIndex]
-        case rhino3dm.ObjectMaterialSource.MaterialFromParent:
-            if inherited:
-                blmat = inherited["material"]
-            else:
-                blmat = converters.material.default()
-                log("DEBUG :: MaterialFromParent but nothing inherited.")
-    return blmat
-
 @profile
 def create_objects(rhobs, rhfile, pytables, options=None):
     log("Importing objects")
@@ -305,6 +291,20 @@ def create_block(rhob, rhfile, blocks, materials, options=None, inherited=None):
         bldef = blocks[rhdef_rhid] = converters.block.definition(rhdef, children, options=options)
         blbk = converters.block.instance(rhob, bldef, options=options)
     return blbk
+
+def get_material(rhob, rhfile, materials, inherited=None):
+    match rhob.Attributes.MaterialSource:
+        case rhino3dm.ObjectMaterialSource.MaterialFromObject:
+            blmat = materials[rhob.Attributes.MaterialIndex]
+        case rhino3dm.ObjectMaterialSource.MaterialFromLayer:
+            blmat = materials[rhfile.Layers.FindIndex(rhob.Attributes.LayerIndex).RenderMaterialIndex]
+        case rhino3dm.ObjectMaterialSource.MaterialFromParent:
+            if inherited:
+                blmat = inherited["material"]
+            else:
+                blmat = converters.material.default()
+                log("DEBUG :: MaterialFromParent but nothing inherited.")
+    return blmat
 
 class IO3DM_ImportOptions(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty()
