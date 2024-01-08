@@ -3,6 +3,7 @@ import functools
 import os
 import time
 import collections
+import farmhash
 
 import bpy
 import rhino3dm
@@ -57,7 +58,7 @@ def _import(operator, context):
 
     pytables = {}
     pytables["collections"] = {}
-    pytables["collections"]["project"] = init(context, options=options, update=update)
+    pytables["b3dm"] = init(context, options=options, update=update)
 
     options.scale = calculate_scale(context, rhfile)
 
@@ -69,13 +70,10 @@ def _import(operator, context):
     if len(rhfile.Layers) > 0:
         create_layers(rhfile.Layers, pytables, options=options)
 
-    if update:
-        purge()
-
     if len(rhfile.Objects) > 0:
-        handle_objects(rhfile, pytables, options=options)
+        handle_objects(rhfile, pytables, options=options, update=update)
 
-    link_to_scene(context, pytables["collections"]["project"])
+    link_to_scene(context, pytables["b3dm"])
     post(pytables)
     return {'FINISHED'}
 
@@ -100,21 +98,48 @@ def patch_options(options):
             converters.block.instance = converters.block.ins_single_mesh
     return None
 
+def finalize_b3dm_data(b3dm):
+    pr_b3dm = getattr(b3dm, addon.name)
+    # NOTE: Collection Index has a delay, meaning it will always be the inverse of the wanted value.
+    if pr_b3dm.col_idx == 0:
+        pr_b3dm.col_0.clear()
+        pr_b3dm.col_idx = 1
+    elif pr_b3dm.col_idx == 1:
+        pr_b3dm.col_1.clear()
+        pr_b3dm.col_idx = 0
+    else:
+        raise ValueError("CollectionProperty flag 'col_idx':", col_idx)
+    return None
+
+def get_b3dm_data(b3dm):
+    pr_b3dm = getattr(b3dm, addon.name)
+    if pr_b3dm.col_idx == 0:
+        return pr_b3dm.col_0, pr_b3dm.col_1
+    elif pr_b3dm.col_idx == 1:
+        return pr_b3dm.col_1, pr_b3dm.col_0
+    else:
+        raise ValueError("CollectionProperty flag 'col_idx':", col_idx)
+
 @profile
 def init(context, options=None, update=None):
     log("Starting import process")
     if update:
-        log("Reload detected")
-        blcol = context.scene.collection.children[options.name]
-        context.scene.collection.children.unlink(blcol)
-        utils.bpy.col.empty(blcol, recursive=True, objects=True)
+        log("Reloading.")
+        b3dm = context.scene.collection.children[options.name]
+        context.scene.collection.children.unlink(b3dm)
+        utils.bpy.col.empty(b3dm, recursive=True, objects=True)
     else:
-        blcol = utils.bpy.col.obt(options.name, force=True, overwrite='NEW')
-        options.name = blcol.name
-    pr_blcol = getattr(blcol, addon.name)
-    pr_blcol["project"] = options.name
-    blcol.use_fake_user = True
-    return blcol
+        b3dm = utils.bpy.col.obt(options.name, force=True, overwrite='NEW')
+        options.name = b3dm.name
+
+    pr_b3dm = getattr(b3dm, addon.name)
+    pr_b3dm.project = True
+    b3dm.use_fake_user = True
+
+    if update and options.force_reload:
+        bl_data, bl_temp = get_b3dm_data(b3dm)
+        bl_data.clear()
+    return b3dm
 
 @profile
 def purge():
@@ -131,10 +156,11 @@ def link_to_scene(context, blcol):
 
 @profile
 def post(pytables):
-    log("Post import cleanup")
+    log("Cleanup")
     for blmat in pytables["materials"]:
         blmat.use_fake_user = False
     bpy.data.orphans_purge(do_recursive=True)
+    finalize_b3dm_data(pytables["b3dm"])
     return None
 
 @profile
@@ -159,7 +185,7 @@ def create_cameras(rhcams, pytables, options=None):
     log("Importing cameras")
     blcol = pytables["collections"]["cameras"] =  utils.bpy.col.obt(
         f"{options.name}::#Cameras",
-        parent=pytables["collections"]["project"],
+        parent=pytables["b3dm"],
         force=True,
     )
 
@@ -187,7 +213,7 @@ def create_layers(rhlayers, pytables, options=None):
     layers = pytables["layers"] = []
     top_layer = pytables["collections"]["layers"] = utils.bpy.col.obt(
         f"{options.name}::#Layers",
-        parent=pytables["collections"]["project"],
+        parent=pytables["b3dm"],
         force=True,
     )
     for rhlay in rhlayers:
@@ -205,42 +231,95 @@ def create_layer(rhlay, rhlayers, layers, top_layer, options=None):
         parent_bllay.children.link(bllay)
     return bllay
 
-def handle_objects(rhfile, pytables, options=None):
-    def _sort(_rhobs):
-        rhbks = []
-        rhobs = []
-        for rhob in _rhobs:
-            if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE:
-                rhbks.append(rhob)
-            elif not rhob.Attributes.IsInstanceDefinitionObject:
-                rhobs.append(rhob)
-        return rhobs, rhbks
+def handle_objects(rhfile, pytables, options=None, update=False):
+    log("Handling objects")
+    materials = pytables["materials"]
+    bl_old, bl_new = get_b3dm_data(pytables["b3dm"])
 
-    layers = pytables["layers"]
-    rhobs, rhbks = _sort(rhfile.Objects)
+    new_rhbks = []
+    new_rhobs = []
+    old_rhob_ids = {}
+    old_rhbk_ids = {}
 
-    if options.filter_objects and len(rhobs) > 0:
-        create_objects(rhobs, rhfile, pytables, options=options)
+    # TODO: Optimize for non-reload flow
+    if not update or options.force_reload:
+        for rhob in rhfile.Objects:
+            bl_mat = get_material(rhob, rhfile, materials)
+            pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
+            rhob.Attributes.SetUserString("pyid", pyid)
 
-    if options.filter_blocks and len(rhbks) > 0:
-        create_blocks(rhbks, rhfile, pytables, options=options)
+            if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE and options.filter_blocks:
+                new_rhbks.append(rhob)
+            elif not rhob.Attributes.IsInstanceDefinitionObject and options.filter_objects:
+                new_rhobs.append(rhob)
+
+        if len(new_rhobs) > 0:
+            create_objects(new_rhobs, rhfile, pytables, bl_new, options=options)
+
+        if len(new_rhbks) > 0:
+            create_blocks(new_rhbks, rhfile, pytables, bl_new, options=options)
+    else:
+        for rhob in rhfile.Objects:
+            bl_mat = get_material(rhob, rhfile, materials)
+            pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
+            rhob.Attributes.SetUserString("pyid", pyid)
+
+            if pyid in bl_old:
+                if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE and options.filter_blocks:
+                    old_rhbk_ids.update({pyid : rhob})
+                elif not rhob.Attributes.IsInstanceDefinitionObject and options.filter_objects:
+                    old_rhob_ids.update({pyid : rhob})
+
+                item = bl_new.add()
+                item.name = pyid
+                item.blob = bl_old[pyid].blob
+            else:
+                if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE and options.filter_blocks:
+                    new_rhbks.append(rhob)
+                elif not rhob.Attributes.IsInstanceDefinitionObject and options.filter_objects:
+                    new_rhobs.append(rhob)
+
+
+        if len(old_rhob_ids) > 0:
+            restore_objects(old_rhob_ids, pytables, bl_new)
+        if len(new_rhobs) > 0:
+            create_objects(new_rhobs, rhfile, pytables, bl_new, options=options)
+
+        if len(old_rhbk_ids) > 0:
+            restore_objects(old_rhbk_ids, pytables, bl_new)
+        if len(new_rhbks) > 0:
+            create_blocks(new_rhbks, rhfile, pytables, bl_new, options=options)
+    purge()
     return None
 
 @profile
-def create_objects(rhobs, rhfile, pytables, options=None):
+def restore_objects(pyids, pytables, bl_data):
+    log("Restoring objects")
+    layers = pytables["layers"]
+
+    for pyid, rhob in pyids.items():
+        item = bl_data[pyid]
+        blob = item.blob
+        layers[rhob.Attributes.LayerIndex].objects.link(blob)
+    return None
+
+@profile
+def create_objects(rhobs, rhfile, pytables, bl_data, options=None):
     log("Importing objects")
     materials = pytables["materials"]
     layers = pytables["layers"]
 
     for rhob in rhobs:
         if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
-            blob = create_object(rhob, rhfile, materials, options=options)
+
+
+            blob = create_object(rhob, rhfile, materials, bl_data, options=options)
             layers[rhob.Attributes.LayerIndex].objects.link(blob)
         else:
             pass
     return None
 
-def create_object(rhob, rhfile, materials, options=None, inherited=None):
+def create_object(rhob, rhfile, materials, bl_data, options=None, inherited=None):
     rhob_attrs = rhob.Attributes
     rhid = str(rhob_attrs.Id)
 
@@ -248,10 +327,14 @@ def create_object(rhob, rhfile, materials, options=None, inherited=None):
 
     blob = converters.object.new(rhob, options=options)
     blob.data.materials.append(blmat)
+
+    item = bl_data.add()
+    item.name = rhob_attrs.GetUserString("pyid")
+    item.blob = blob
     return blob
 
 @profile
-def create_blocks(rhobs, rhfile, pytables, options=None):
+def create_blocks(rhobs, rhfile, pytables, bl_data, options=None):
     log("Importing blocks")
     blocks = pytables["blocks"] = {}
     materials = pytables["materials"]
@@ -259,13 +342,13 @@ def create_blocks(rhobs, rhfile, pytables, options=None):
 
     for rhob in rhobs:
         if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
-            blob = create_block(rhob, rhfile, blocks, materials, options=options)
+            blob = create_block(rhob, rhfile, blocks, materials, bl_data, options=options)
             layers[rhob.Attributes.LayerIndex].objects.link(blob)
         else:
             pass
     return None
 
-def create_block(rhob, rhfile, blocks, materials, options=None, inherited=None):
+def create_block(rhob, rhfile, blocks, materials, bl_data, options=None, inherited=None):
     blmat = get_material(rhob, rhfile, materials, inherited=inherited)
 
     rhdef_rhid = str(rhob.Geometry.ParentIdefId)
@@ -283,15 +366,19 @@ def create_block(rhob, rhfile, blocks, materials, options=None, inherited=None):
             else:
                 child_rhob = rhfile.Objects.FindId(child_rhid)
                 if child_rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE:
-                    child_blob = create_block(child_rhob, rhfile, blocks, materials, options=options, inherited=inherited)
+                    child_blob = create_block(child_rhob, rhfile, blocks, materials, bl_data, options=options, inherited=inherited)
                 elif child_rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
-                    child_blob = create_object(child_rhob, rhfile, materials, options=options, inherited=inherited)
+                    child_blob = create_object(child_rhob, rhfile, materials, bl_data, options=options, inherited=inherited)
                 else:
                     continue
                 blocks[child_rhid] = child_blob
             children.append(child_blob)
         bldef = blocks[rhdef_rhid] = converters.block.definition(rhdef, children, options=options)
         blbk = converters.block.instance(rhob, bldef, options=options)
+
+    item = bl_data.add()
+    item.name = rhob.Attributes.GetUserString("pyid")
+    item.blob = blbk
     return blbk
 
 def get_material(rhob, rhfile, materials, inherited=None):
@@ -329,6 +416,11 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
 
     filter_mesh_curves : bpy.props.BoolProperty(
         name = "Curves",
+        default = False,
+    )
+
+    force_reload : bpy.props.BoolProperty(
+        name = "Force Reload?",
         default = False,
     )
 
@@ -433,6 +525,7 @@ class IO3DM_OT_Import(bpy.types.Operator):
             row.prop(self, "loaded", text="Reload?")
 
         col.prop(self, "name")
+        col.prop(options, "force_reload", toggle=True)
 
         col =  layout.box().column()
         col.use_property_split = True

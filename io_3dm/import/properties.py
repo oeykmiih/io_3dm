@@ -4,10 +4,28 @@ import bpy
 from io_3dm import utils
 addon = utils.bpy.Addon()
 
+class IO3DM_hash(bpy.types.PropertyGroup):
+    blob : bpy.props.PointerProperty(
+        name = "Data",
+        type = bpy.types.Object,
+    )
+
 class Collection(bpy.types.PropertyGroup):
-    pass
+    project : bpy.props.BoolProperty()
+    col_idx : bpy.props.IntProperty(
+        name = "Data Collection Index"
+    )
+    col_0 : bpy.props.CollectionProperty(
+        name = "Data Collection 1",
+        type = IO3DM_hash,
+    )
+    col_1 : bpy.props.CollectionProperty(
+        name = "Data Collection 2",
+        type = IO3DM_hash,
+    )
 
 CLASSES = [
+    IO3DM_hash,
     Collection,
 ]
 
