@@ -18,6 +18,7 @@ addon = utils.bpy.Addon()
 
 LIBRARIES = {
     "rhino" : None,
+    "cityhash" : None,
 }
 LIBRARIES = utils.import_libraries(LIBRARIES)
 
