@@ -76,6 +76,7 @@ def _import(operator, context):
         handle_objects(rhfile, pytables, options=options)
 
     link_to_scene(context, pytables["collections"]["project"])
+    post(pytables)
     return {'FINISHED'}
 
 def patch_options(options):
@@ -130,6 +131,7 @@ def link_to_scene(context, blcol):
 
 @profile
 def post(pytables):
+    log("Post import cleanup")
     for blmat in pytables["materials"]:
         blmat.use_fake_user = False
     bpy.data.orphans_purge(do_recursive=True)
