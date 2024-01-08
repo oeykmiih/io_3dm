@@ -24,8 +24,11 @@ def obt(datablock, id, scope=None, force=False, overwrite=None, **kwargs):
                 datablock[id].name = f"{id}.old"
                 bldat = _create(datablock, id, **kwargs)
             case 'HARD':
-                datablock.remove(datablock[id])
+                old = datablock[id]
+                old.name = f"{id}.###"
                 bldat = _create(datablock, id, **kwargs)
+                old.user_remap(bldat)
+                datablock.remove(old)
             case None:
                 bldat = datablock[id]
     elif force:
