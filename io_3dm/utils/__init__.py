@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-__version__ = '240108'
+__version__ = '240112'
 
 from . import bpy
 from .std import *

@@ -34,14 +34,14 @@ def apply_transform(ob, loc=False, rot=False, sca=False):
     return None
 
 #CREDIT: https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2
-def join(target, source, remove_doubles=False):
+def join(target, sources, remove_doubles=False):
     new = bmesh.new()
     new.from_mesh(target.data)
     temp = bpy.data.meshes.new("temp")
-    for blob in source:
+    for blob in sources:
         if blob.type == 'MESH':
             _bmesh = bmesh.new()
-            _bmesh.from_mesh(blob.data)
+            _bmesh.from_mesh(blob.data,  face_normals=True)
             _bmesh.transform(blob.matrix_world)
             _bmesh.to_mesh(temp)
             _bmesh.free()
@@ -52,6 +52,8 @@ def join(target, source, remove_doubles=False):
         bmesh.ops.remove_doubles(new, verts=new.verts, dist=0.001)
     new.to_mesh(target.data)
     new.free()
+
+    target.data.use_auto_smooth = True
     return None
 
 #CREDIT: https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2
