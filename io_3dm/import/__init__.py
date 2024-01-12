@@ -103,14 +103,12 @@ def patch_options(options):
             converters.block.instance = converters.block.ins_single_mesh
     return None
 
-def finalize_b3dm_data(b3dm):
+def set_b3dm_data_index(b3dm):
     pr_b3dm = getattr(b3dm, addon.name)
     # NOTE: Collection Index has a delay, meaning it will always be the inverse of the wanted value.
     if pr_b3dm.col_idx == 0:
-        pr_b3dm.col_0.clear()
         pr_b3dm.col_idx = 1
     elif pr_b3dm.col_idx == 1:
-        pr_b3dm.col_1.clear()
         pr_b3dm.col_idx = 0
     else:
         raise ValueError("CollectionProperty flag 'col_idx':", col_idx)
@@ -165,7 +163,7 @@ def post(pytables):
     for blmat in pytables["materials"]:
         blmat.use_fake_user = False
     bpy.data.orphans_purge(do_recursive=True)
-    finalize_b3dm_data(pytables["b3dm"])
+    set_b3dm_data_index(pytables["b3dm"])
     return None
 
 @profile
@@ -284,6 +282,9 @@ def handle_objects(rhfile, pytables, options=None, update=False):
                 elif not rhob.Attributes.IsInstanceDefinitionObject and options.filter_objects:
                     new_rhobs.append(rhob)
 
+        # NOTE: Clear and purge old unused blobs to improve reimport speed.
+        bl_old.clear()
+        purge()
 
         if len(old_rhob_ids) > 0:
             restore_objects(old_rhob_ids, pytables, bl_new, options=options)
@@ -294,7 +295,7 @@ def handle_objects(rhfile, pytables, options=None, update=False):
             restore_objects(old_rhbk_ids, pytables, bl_new, options=options)
         if len(new_rhbks) > 0:
             create_blocks(new_rhbks, rhfile, pytables, bl_new, options=options)
-    purge()
+
     return None
 
 @profile
