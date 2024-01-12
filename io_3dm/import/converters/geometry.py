@@ -60,6 +60,8 @@ def mesh(rhob, scale, options):
     # TODO: rhino3dm.CombineVertical not working properly? need to investigate,
     ## for now use Blender's remove_double operator.
     blmesh_join_maybe(blmesh, options)
+    blmesh_shadesmooth_maybe(blmesh, options)
+    blmesh.use_auto_smooth = True
     return blmesh
 
 def rhmesh_join_maybe(rhmesh):
@@ -84,6 +86,18 @@ def blmesh_join_true(blmesh, options):
     bmesh.ops.remove_doubles(new, verts=new.verts, dist=options.mesh_join_threshold)
     new.to_mesh(blmesh)
     new.free()
+    return None
+
+def blmesh_shadesmooth_maybe(blmesh, options):
+    return None
+
+def blmesh_shadesmooth_false(blmesh, options):
+    # NOTE: No need to shade flat since new meshes are always flat shaded.
+    # blmesh.shade_flat()
+    return None
+
+def blmesh_shadesmooth_true(blmesh, options):
+    blmesh.shade_smooth()
     return None
 
 def curve(rhob, scale, options):

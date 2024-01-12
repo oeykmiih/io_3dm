@@ -88,6 +88,11 @@ def patch_options(options):
     if options.mesh_faces == 'JOIN':
         env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_true"]
         env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_true"]
+
+        if options.mesh_shading == 'SMOOTH':
+             env_geometry["blmesh_shadesmooth_maybe"] = env_geometry["blmesh_shadesmooth_true"]
+        else:
+             env_geometry["blmesh_shadesmooth_maybe"] = env_geometry["blmesh_shadesmooth_false"]
     else:
         env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_false"]
         env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_false"]
@@ -281,19 +286,19 @@ def handle_objects(rhfile, pytables, options=None, update=False):
 
 
         if len(old_rhob_ids) > 0:
-            restore_objects(old_rhob_ids, pytables, bl_new)
+            restore_objects(old_rhob_ids, pytables, bl_new, options=options)
         if len(new_rhobs) > 0:
             create_objects(new_rhobs, rhfile, pytables, bl_new, options=options)
 
         if len(old_rhbk_ids) > 0:
-            restore_objects(old_rhbk_ids, pytables, bl_new)
+            restore_objects(old_rhbk_ids, pytables, bl_new, options=options)
         if len(new_rhbks) > 0:
             create_blocks(new_rhbks, rhfile, pytables, bl_new, options=options)
     purge()
     return None
 
 @profile
-def restore_objects(pyids, pytables, bl_data):
+def restore_objects(pyids, pytables, bl_data, options=None):
     log("Restoring objects")
     layers = pytables["layers"]
 
@@ -301,6 +306,13 @@ def restore_objects(pyids, pytables, bl_data):
         item = bl_data[pyid]
         blob = item.blob
         layers[rhob.Attributes.LayerIndex].objects.link(blob)
+
+        blob.data.use_auto_smooth =  True
+        match options.mesh_shading:
+            case 'SMOOTH':
+                blob.data.shade_smooth()
+            case 'FLAT':
+                blob.data.shade_flat()
     return None
 
 @profile
@@ -441,6 +453,15 @@ class IO3DM_ImportOptions(bpy.types.PropertyGroup):
         unit = 'LENGTH',
     )
 
+    mesh_shading : bpy.props.EnumProperty(
+        name = "Shading",
+        items = [
+            ('FLAT', "Flat", ""),
+            ('SMOOTH', "Smooth", ""),
+        ],
+        default = 'SMOOTH',
+    )
+
     block_instancing : bpy.props.EnumProperty(
         name = "Instancing",
         items = [
@@ -544,14 +565,15 @@ class IO3DM_OT_Import(bpy.types.Operator):
 
         col.prop(options, "block_instancing")
 
-        col =  layout.box().column()
+        col =  layout.box().column(align=True)
         col.use_property_split = True
         col.use_property_decorate = False
         col.label(text="Mesh")
 
         col.prop(options, "mesh_faces")
-        sub = col.row(align=True)
+        sub = col.column(align=True)
         sub.enabled = (options.mesh_faces == 'JOIN')
+        sub.row(align=True).prop(options, "mesh_shading", expand=True)
         sub.prop(options, "mesh_join_threshold")
 
         sub = col.column()
