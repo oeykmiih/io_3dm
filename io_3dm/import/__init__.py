@@ -245,6 +245,12 @@ def handle_objects(rhfile, pytables, options=None, update=False):
     old_rhob_ids = {}
     old_rhbk_ids = {}
 
+    rhdef_hash = {}
+
+    if options.filter_blocks:
+        for rhdef in rhfile.InstanceDefinitions:
+            rhdef_hash[rhdef.Id] = str(rhdef.GetObjectIds())
+
     # TODO: Optimize for non-reload flow
     if not update or options.force_reload:
         # NOTE: Clear and purge old blobs before importing.
@@ -253,7 +259,10 @@ def handle_objects(rhfile, pytables, options=None, update=False):
 
         for rhob in rhfile.Objects:
             bl_mat = get_material(rhob, rhfile, materials)
-            pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
+            if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE:
+                pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + str(rhdef_hash[rhob.Geometry.ParentIdefId]) + bl_mat.name))
+            else:
+                pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
             rhob.Attributes.SetUserString("pyid", pyid)
 
             if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE and options.filter_blocks:
@@ -269,7 +278,12 @@ def handle_objects(rhfile, pytables, options=None, update=False):
     else:
         for rhob in rhfile.Objects:
             bl_mat = get_material(rhob, rhfile, materials)
-            pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
+
+            if rhob.Geometry.ObjectType == RHINO_INSTANCE_REFERENCE:
+                rhdef = rhfile.InstanceDefinitions.FindId(rhob.Geometry.ParentIdefId)
+                pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + str(rhdef_hash[rhob.Geometry.ParentIdefId]) + bl_mat.name))
+            else:
+                pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
             rhob.Attributes.SetUserString("pyid", pyid)
 
             if pyid in bl_old:
