@@ -247,6 +247,10 @@ def handle_objects(rhfile, pytables, options=None, update=False):
 
     # TODO: Optimize for non-reload flow
     if not update or options.force_reload:
+        # NOTE: Clear and purge old blobs before importing.
+        bl_old.clear()
+        purge()
+
         for rhob in rhfile.Objects:
             bl_mat = get_material(rhob, rhfile, materials)
             pyid = str(farmhash.FarmHash32(rhob.Geometry.Encode()["data"] + bl_mat.name))
