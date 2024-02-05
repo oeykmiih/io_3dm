@@ -125,7 +125,10 @@ def get_b3dm_data(b3dm):
 def init(context, options=None, update=None):
     log("Starting import process")
     if update:
-        log("Reloading.")
+        if options.force_reload:
+            log("Force reloading.")
+        else:
+            log("Reloading.")
         b3dm = context.scene.collection.children[options.name]
         context.scene.collection.children.unlink(b3dm)
         utils.bpy.col.empty(b3dm, recursive=True, objects=True)
