@@ -311,7 +311,10 @@ def restore_objects(pyids, pytables, bl_data, options=None):
     for pyid, rhob in pyids.items():
         item = bl_data[pyid]
         blob = item.blob
-        layers[rhob.Attributes.LayerIndex].objects.link(blob)
+        # NOTE: Restored objects have no distinction bettween definitions and instances,
+        ## got to skip linking definitions.
+        if not rhob.Attributes.IsInstanceDefinitionObject:
+            layers[rhob.Attributes.LayerIndex].objects.link(blob)
 
         blob.data.use_auto_smooth =  True
         match options.mesh_shading:
@@ -332,7 +335,8 @@ def create_objects(rhobs, rhfile, pytables, bl_data, options=None):
 
 
             blob = create_object(rhob, rhfile, materials, bl_data, options=options)
-            layers[rhob.Attributes.LayerIndex].objects.link(blob)
+            if not rhob.Attributes.IsInstanceDefinitionObject:
+                layers[rhob.Attributes.LayerIndex].objects.link(blob)
         else:
             pass
     return None
@@ -361,7 +365,8 @@ def create_blocks(rhobs, rhfile, pytables, bl_data, options=None):
     for rhob in rhobs:
         if rhob.Geometry.ObjectType in converters.geometry.RHINO_IMPORT:
             blob = create_block(rhob, rhfile, blocks, materials, bl_data, options=options)
-            layers[rhob.Attributes.LayerIndex].objects.link(blob)
+            if not rhob.Attributes.IsInstanceDefinitionObject:
+                layers[rhob.Attributes.LayerIndex].objects.link(blob)
         else:
             pass
     return None
