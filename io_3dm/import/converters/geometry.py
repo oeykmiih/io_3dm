@@ -38,7 +38,6 @@ def mesh(rhob, scale, options):
     # Add faces and vertices to lists
     for mesh in rhmesh:
         if mesh:
-            rhmesh_join_maybe(mesh)
             mesh.Faces.CullDegenerateFaces()
             mesh.Faces.ConvertTrianglesToQuads(math.pi / 90.0, 0.875)
 
@@ -57,22 +56,10 @@ def mesh(rhob, scale, options):
     blmesh = bpy.data.meshes.new(name=str(rhob.Attributes.Id)) # Create empty mesh
     blmesh.from_pydata(vertices, [], faces)
 
-    # TODO: rhino3dm.CombineVertical not working properly? need to investigate,
-    ## for now use Blender's remove_double operator.
     blmesh_join_maybe(blmesh, options)
     blmesh_shadesmooth_maybe(blmesh, options)
     blmesh.use_auto_smooth = True
     return blmesh
-
-def rhmesh_join_maybe(rhmesh):
-    return None
-
-def rhmesh_join_false(rhmesh):
-    return None
-
-def rhmesh_join_true(rhmesh):
-    rhmesh.Vertices.CombineIdentical(True, True)
-    return None
 
 def blmesh_join_maybe(blmesh, options):
     return None

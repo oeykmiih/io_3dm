@@ -86,7 +86,6 @@ def patch_options(options):
         env_geometry["RHINO_IMPORT"].pop(rhino3dm.ObjectType.Curve)
 
     if options.mesh_faces == 'JOIN':
-        env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_true"]
         env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_true"]
 
         if options.mesh_shading == 'SMOOTH':
@@ -94,7 +93,6 @@ def patch_options(options):
         else:
              env_geometry["blmesh_shadesmooth_maybe"] = env_geometry["blmesh_shadesmooth_false"]
     else:
-        env_geometry["rhmesh_join_maybe"] = env_geometry["rhmesh_join_false"]
         env_geometry["blmesh_join_maybe"] = env_geometry["blmesh_join_false"]
 
     match options.block_instancing:
