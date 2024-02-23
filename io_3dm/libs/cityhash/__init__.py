@@ -6,9 +6,15 @@ match platform.system():
     case 'Windows':
         DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "win64"))
     case 'Darwin':
-        DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "macos"))
+        match platform.processor():
+            case 'arm':
+                DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "mac_arm"))
+            case 'i386':
+                DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "mac_intel"))
+            case _:
+                print("DEBUG :: Platform not supported by cityhash.")
     case _:
-        print("DEBUG :: Platform not supported by rhino3dm.")
+        print("DEBUG :: Platform not supported by cityhash.")
 
 try:
     if os.path.isdir(DIR) and DIR not in sys.path:
