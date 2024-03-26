@@ -53,7 +53,7 @@ def join(target, sources, remove_doubles=False):
     new.to_mesh(target.data)
     new.free()
 
-    target.data.use_auto_smooth = True
+    target.data.set_sharp_from_angle(angle=0.6)
     return None
 
 #CREDIT: https://blenderartists.org/t/joining-objects-in-edit-mode/1158066/2

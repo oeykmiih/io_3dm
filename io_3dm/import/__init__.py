@@ -330,7 +330,7 @@ def restore_objects(pyids, pytables, bl_data, options=None):
         if not rhob.Attributes.IsInstanceDefinitionObject:
             layers[rhob.Attributes.LayerIndex].objects.link(blob)
 
-        blob.data.use_auto_smooth =  True
+        blob.data.set_sharp_from_angle(angle=0.6)
         match options.mesh_shading:
             case 'SMOOTH':
                 blob.data.shade_smooth()

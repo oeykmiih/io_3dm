@@ -58,7 +58,6 @@ def mesh(rhob, scale, options):
 
     blmesh_join_maybe(blmesh, options)
     blmesh_shadesmooth_maybe(blmesh, options)
-    blmesh.use_auto_smooth = True
     return blmesh
 
 def blmesh_join_maybe(blmesh, options):
@@ -85,6 +84,7 @@ def blmesh_shadesmooth_false(blmesh, options):
 
 def blmesh_shadesmooth_true(blmesh, options):
     blmesh.shade_smooth()
+    blmesh.set_sharp_from_angle(angle=0.6)
     return None
 
 def curve(rhob, scale, options):
